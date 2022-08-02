@@ -35,7 +35,7 @@ class TestVirtualFileSystem(unittest.TestCase):
     def test_open(self):
         TestVirtualFileSystem.virtual_filesystem.open('c:\\users\\omrib\\desktop\\test.sample')
         _, files = TestVirtualFileSystem.virtual_filesystem.listdir('c:\\users\\omrib\\desktop')
-        self.assertTrue(any([fname == 'test.sample' for fname, size in files]))
+        self.assertTrue(any(fname == 'test.sample' for fname, size in files))
 
     def test_read_write(self):
         file_ = TestVirtualFileSystem.virtual_filesystem.open('c:\\calc.exe')

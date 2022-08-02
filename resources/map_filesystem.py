@@ -29,17 +29,17 @@ def ignore_path(path):
 
 
 def map_filesystem():
-    out = dict()
+    out = {}
     real_username = getpass.getuser()
     for root, dirs, files in os.walk('c:\\'):
         if ignore_path(root):
-            print('ignoring ' + root + '...')
+            print(f'ignoring {root}...')
             continue
         try:
             out[root.replace(real_username, 'john')] = ([dir_.replace(real_username, 'john') for dir_ in dirs if not ignore_path(dir_)],
                                                         [(file_.replace(real_username, 'john'), os.stat(os.path.join(root, file_)).st_size) for file_ in files if not ignore_path(file_)])
         except WindowsError:
-            print(root + ' failed!')
+            print(f'{root} failed!')
     return out
 
 def main():

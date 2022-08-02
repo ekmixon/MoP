@@ -81,14 +81,16 @@ class VirtualDirectory:
         self.name = name.rstrip('\\')
         self.physical_path = physical_path
         self.parent_directory = parent_directory
-        self.child_directories = list()
-        self.child_files = list()
+        self.child_directories = []
+        self.child_files = []
 
     @property
     def full_path(self) -> str:
-        if not self.parent_directory:
-            return self.name
-        return win_path_join(self.parent_directory.full_path, self.name)
+        return (
+            win_path_join(self.parent_directory.full_path, self.name)
+            if self.parent_directory
+            else self.name
+        )
 
     def create_directory(self, name: str) -> 'VirtualDirectory':
         """Create new child directory"""
@@ -115,9 +117,12 @@ class VirtualDirectory:
         safe_name = os.path.basename(name)  # prevent directory traversal
         if not safe_name:
             raise Exception('Suspicious file name! possible directory traversal attempt!')
-        virtual_file = VirtualFile(safe_name,
-                                   physical_path=os.path.join(self.physical_path, safe_name + '.sample'),
-                                   default_size=default_size)
+        virtual_file = VirtualFile(
+            safe_name,
+            physical_path=os.path.join(self.physical_path, f'{safe_name}.sample'),
+            default_size=default_size,
+        )
+
         self.child_files.append(virtual_file)
 
     def exists(self, name):
@@ -153,7 +158,7 @@ class VirtualFileSystem:
                  lazy_load: bool=True):
         self.default_username = default_username
         self.user_home_path = win_path_join('c:\\users', self.default_username)
-        self.currently_opened_files = dict()
+        self.currently_opened_files = {}
         self.root_directory = VirtualDirectory('C:', artifacts_store_root)
         self.loaded_directories = dict({'c:': self.root_directory})
         self.lazy_load = lazy_load
@@ -202,10 +207,10 @@ class VirtualFileSystem:
         normalized_path = VirtualFileSystem.normalize_path(path).lower()
         if normalized_path in self.loaded_directories:
             return self.loaded_directories[normalized_path] # path already loaded
-        path_in_template = self._find_path_in_template(normalized_path)
-        if not path_in_template:
+        if path_in_template := self._find_path_in_template(normalized_path):
+            return self._load_directory_from_template(path_in_template)
+        else:
             raise NotADirectoryError(f'{path_in_template} not found in template!')
-        return self._load_directory_from_template(path_in_template)
 
     @staticmethod
     def normalize_path(path):
@@ -213,14 +218,18 @@ class VirtualFileSystem:
 
     def _template_user_home_to_fake_user_home(self, path):
         template_user_home = 'c:\\users\\john'
-        if not path.lower().startswith(template_user_home):
-            return path
-        return self.user_home_path + path[len(template_user_home):]
+        return (
+            self.user_home_path + path[len(template_user_home) :]
+            if path.lower().startswith(template_user_home)
+            else path
+        )
 
     def _fake_user_home_to_template_user_home(self, path):
-        if not path.lower().startswith(self.user_home_path.lower()):
-            return path
-        return 'c:\\users\\john' + path[len(self.user_home_path):]
+        return (
+            'c:\\users\\john' + path[len(self.user_home_path) :]
+            if path.lower().startswith(self.user_home_path.lower())
+            else path
+        )
 
     def open(self, file_path: str) -> VirtualFile:
         """Open a file by path for r/w operations"""
@@ -239,9 +248,11 @@ class VirtualFileSystem:
             raise NotADirectoryError(f'No such path {path}')
 
         def _open_dir_recursive(dir_: VirtualDirectory, path: List[str]) -> VirtualDirectory:
-            if not len(path):
-                return dir_
-            return _open_dir_recursive(dir_.open_dir(path[0]), path[1:])
+            return (
+                _open_dir_recursive(dir_.open_dir(path[0]), path[1:])
+                if len(path)
+                else dir_
+            )
 
         return _open_dir_recursive(self.root_directory, path.rstrip('\\').split('\\')[1:])
 

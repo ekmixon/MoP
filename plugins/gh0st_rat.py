@@ -138,7 +138,7 @@ def loop_system_manager(ip, port):
 class Manager:
     def __init__(self, client_socket: 'ClientSocket', logger: logging.Logger=None):
         self.client_socket = client_socket
-        self.logger = logger if logger else logging.getLogger()
+        self.logger = logger or logging.getLogger()
 
     def on_receive(self, buffer: bytes):
         raise NotImplementedError()
@@ -213,11 +213,11 @@ class KernelManager(Manager):
 
     def shutdown_windows(self, reason):
         shutdown_type = 'unknown'
-        if reason == 0 or reason == 4:
+        if reason in [0, 4]:
             shutdown_type = 'logoff'
-        elif reason == 1 or reason == 5:
+        elif reason in [1, 5]:
             shutdown_type = 'shutdown'
-        elif reason == 2 or reason == 6:
+        elif reason in [2, 6]:
             shutdown_type = 'reboot'
         self.logger.info(f'attacker tried to {shutdown_type} the system!')
 
@@ -280,7 +280,10 @@ class FileManager(Manager):
             dir_ = buffer[1:-1].decode(errors='ignore')
             self.send_files_list(dir_)
 
-        elif buffer[0] == Command.COMMAND_DELETE_FILE.value or buffer[0] == Command.COMMAND_DELETE_DIRECTORY.value:
+        elif buffer[0] in [
+            Command.COMMAND_DELETE_FILE.value,
+            Command.COMMAND_DELETE_DIRECTORY.value,
+        ]:
             path = buffer[1:-1].decode(errors='ignore')
             self.logger.info(f'attacker tried to delete {path}')
             self.send_token(Token.TOKEN_DELETE_FINISH)
@@ -305,7 +308,7 @@ class FileManager(Manager):
             self.send_token(Token.TOKEN_RENAME_FINISH)
 
         elif buffer[0] == Command.COMMAND_STOP.value:
-            self.logger.info(f'attacker stopped file transfer')
+            self.logger.info('attacker stopped file transfer')
             self.send_token(Token.TOKEN_TRANSFER_FINISH)
 
         elif buffer[0] == Command.COMMAND_SET_TRANSFER_MODE.value:

@@ -13,10 +13,10 @@ from typing import List, Tuple
 
 def import_puppet_rat(full_name: str) -> PuppetRAT:
     module_name, class_name = full_name.rsplit('.', 1)
-    module = importlib.import_module(module_name)
-    if not module:
+    if module := importlib.import_module(module_name):
+        return getattr(module, class_name)
+    else:
         raise ModuleNotFoundError(module_name)
-    return getattr(module, class_name)
 
 
 def connect(target_ip: str, target_port: int, plugin_name: str) -> None:

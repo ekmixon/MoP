@@ -166,8 +166,8 @@ class NjRAT(PuppetRAT):
         conn.connect((self.client_ip, self.client_port))
         conn.send(f'{len(msg)}\x00{msg}'.encode('utf-8'))
         content = b''
-        while len(content) < int(size):
-            content = content + conn.recv(1024)
+        while len(content) < size:
+            content += conn.recv(1024)
         conn.close()
         return content
 
@@ -265,11 +265,11 @@ class NjRAT(PuppetRAT):
             self.logger.info('attacker asked for keystroke log!')
             today = datetime.now().strftime("%y-%m-%d")
             fake_keystroke_log = f'\r\n\x01{today} chrome New Tab - Google Chrome\x01\r\n' \
-                                 f'googl.[Back]e.com[ENTER]' \
-                                 f'What is MoP Framework?[ENTER]' \
-                                 f'\r\n\x01{today} Outlook.exe - Mr.Victim\x01\r\n' \
-                                 f'sec@my[Back]corporate.com' \
-                                 f'Hi,[ENTER][ENTER]Did anyone heard on this MoP thing?[ENTER]'
+                                     f'googl.[Back]e.com[ENTER]' \
+                                     f'What is MoP Framework?[ENTER]' \
+                                     f'\r\n\x01{today} Outlook.exe - Mr.Victim\x01\r\n' \
+                                     f'sec@my[Back]corporate.com' \
+                                     f'Hi,[ENTER][ENTER]Did anyone heard on this MoP thing?[ENTER]'
             b64_fake_banner = base64.b64encode(fake_keystroke_log.encode())
             self.send(f'kl|\'|\'|{b64_fake_banner.decode()}')
 
@@ -311,7 +311,7 @@ class NjRAT(PuppetRAT):
 
     def _handle_connections_request(self, params):
         if params == b'~':
-            connections = list()
+            connections = []
             if not hasattr(self, 'netstat'):
                 self.netstat = network.netstat()
 

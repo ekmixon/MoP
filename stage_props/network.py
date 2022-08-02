@@ -71,11 +71,15 @@ def netstat(chrome_pid: int=None) -> List[Connection]:
 
     if not chrome_pid:
         chrome_pid = random.randint(1000, 1999)
-    for i in range(random.randint(2, 4)):
-        default_system_connections.append(Connection(proto=Proto.TCP,
-                                                     local_address=Address('127.0.0.1', random.randint(49151, 49999)),
-                                                     foreign_address=Address(random_cdn_ip(), 443),
-                                                     state=State.ESTABLISHED,
-                                                     pid=chrome_pid))
+    default_system_connections.extend(
+        Connection(
+            proto=Proto.TCP,
+            local_address=Address('127.0.0.1', random.randint(49151, 49999)),
+            foreign_address=Address(random_cdn_ip(), 443),
+            state=State.ESTABLISHED,
+            pid=chrome_pid,
+        )
+        for _ in range(random.randint(2, 4))
+    )
 
     return default_system_connections
